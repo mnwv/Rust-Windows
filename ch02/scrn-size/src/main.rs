@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;

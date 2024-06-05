@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use windows_sys::{
     core::*, 
     Win32::Foundation::*,
