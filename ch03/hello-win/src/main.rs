@@ -22,7 +22,7 @@ fn main() {
             cbClsExtra: 0,
             cbWndExtra: 0,
             hInstance: instance,
-            hIcon: 0,
+            hIcon: LoadIconW(0, IDI_APPLICATION),
             hCursor: LoadCursorW(0, IDC_ARROW),
             hbrBackground: GetStockObject(WHITE_BRUSH),
             lpszMenuName: std::ptr::null(),
