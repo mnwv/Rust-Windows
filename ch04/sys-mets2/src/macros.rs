@@ -5,5 +5,5 @@ macro_rules! hiword {
 
 #[allow(unused_macros)]
 macro_rules! loword {
-	($param:expr) => {$param as i32};
+	($param:expr) => {($param & 0xFFFF) as i32};
 }
