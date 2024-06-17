@@ -145,19 +145,14 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 let hdc = BeginPaint(window, &mut ps);
 
                 let stock_font = GetStockObject(STOCK_FONTS[I_FONT as usize].id);
-                
                 let old_object = SelectObject(hdc, stock_font);
-
                 let mut face_name_wchar: [u16;LF_FACESIZE as usize] = std::mem::zeroed();
                 let n = GetTextFaceW(hdc, LF_FACESIZE as i32, face_name_wchar.as_mut_ptr());
-                println!("I_FONT={}, stock_font={} old_object={} n={}", I_FONT, stock_font, old_object, n);
-
                 let face_name = if n > 0 { from_wide_ptr(face_name_wchar.as_ptr())} else { "UNKNOWN".to_string() };
 
                 let mut tm: TEXTMETRICW = std::mem::zeroed();
                 let is_valid_tm = GetTextMetricsW(hdc, &mut tm);
-                println!("is_valid_tm={}", is_valid_tm);
-                if is_valid_tm == 0 {
+                if is_valid_tm == FALSE {
                     SelectObject(hdc, old_object);
                     SetTextColor(hdc, rgb!(255, 0, 0));
                     let s = format!("GetTextMetricsW() failed. stock font name:{}", STOCK_FONTS[I_FONT as usize].name);
@@ -166,17 +161,17 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     EndPaint(window, &ps);
                     return 0;
                 }
+
                 let cx_grid = std::cmp::max(3 * tm.tmAveCharWidth, 2 * tm.tmMaxCharWidth);
                 let cy_grid = tm.tmHeight + 3;
                 let header = format!(" {}: Face Name = {} CharSet = {}",
                     STOCK_FONTS[I_FONT as usize].name, face_name, tm.tmCharSet);
-                println!("header={}", header);
                 let header_wchars = to_wide_chars(&header);
                 TextOutW(hdc, 0, 0, header_wchars.as_ptr(), lstrlenW(header_wchars.as_ptr()));
                 
                 SetTextAlign(hdc, TA_TOP | TA_CENTER);
 
-                println!("vertical and horizontal lines");
+                // vertical and horizontal lines
                 for i in 0_i32..17_i32 {
                     MoveToEx(hdc, (i + 2) * cx_grid,  2 * cy_grid, std::ptr::null_mut());
                     LineTo  (hdc, (i + 2) * cx_grid, 19 * cy_grid);
@@ -185,7 +180,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     LineTo  (hdc, 18 * cx_grid, (i + 3) * cy_grid);
                 }
 
-                println!("vertical and horizontal headings");
+                // vertical and horizontal headings
                 for i in 0_i32..16_i32 {
                     let mut s = format!("{:X}-", i);
                     let mut s_wchar = to_wide_chars(&s);
