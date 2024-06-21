@@ -6,7 +6,6 @@ use windows_sys::{
     Win32::Graphics::Gdi::*,
     Win32::System::LibraryLoader::GetModuleHandleA, 
     Win32::UI::{WindowsAndMessaging::*,},
-    Win32::System::SystemServices::*,
     Win32::System::Diagnostics::Debug::*,
 };
 
@@ -85,7 +84,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
 
                     let rect: RECT = RECT {
                         left: x*CX_BLOCK,
-                        top: y*CX_BLOCK,
+                        top: y*CY_BLOCK,
                         right: (x + 1) * CX_BLOCK,
                         bottom: (y + 1) * CY_BLOCK,
                     };
@@ -100,6 +99,18 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 let mut ps: PAINTSTRUCT = std::mem::zeroed();
                 let hdc = BeginPaint(window, &mut ps);
 
+                for x in 0_i32..DIVISIONS as i32 {
+                    for y in 0_i32..DIVISIONS as i32 {
+                        Rectangle(hdc, x * CX_BLOCK, y * CY_BLOCK,
+                                    (x + 1) * CX_BLOCK, (y + 1) * CY_BLOCK);
+                        if STATE[y as usize][x as usize] {
+                            MoveToEx(hdc, x * CX_BLOCK, y * CY_BLOCK, std::ptr::null_mut());
+                            LineTo(hdc, (x + 1) * CX_BLOCK, (y + 1) * CY_BLOCK);
+                            MoveToEx(hdc, x * CX_BLOCK, (y + 1) * CY_BLOCK, std::ptr::null_mut());
+                            LineTo(hdc, (x + 1) * CX_BLOCK, y * CY_BLOCK);
+                        }
+                    }
+                }
                 EndPaint(window, &ps);
                 0
             }
