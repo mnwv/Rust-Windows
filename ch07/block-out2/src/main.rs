@@ -102,11 +102,8 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
 
                     draw_box_outline(window);
 
-                    PT_END.x = loword!(lparam);
-                    PT_END.y = hiword!(lparam);
-
-                    if PT_END.x & 0x8000 == 0x8000 { PT_END.x = -PT_END.x; }
-                    if PT_END.y & 0x8000 == 0x8000 { PT_END.y = -PT_END.y; }
+                    PT_END.x = (loword!(lparam) as i16) as i32;
+                    PT_END.y = (hiword!(lparam) as i16) as i32;
 
                     draw_box_outline(window);
                 }
@@ -118,10 +115,8 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
 
                     PT_BOX_BEG.x = PT_BEG.x;
                     PT_BOX_BEG.y = PT_BEG.y;
-                    PT_BOX_END.x = loword!(lparam);
-                    PT_BOX_END.y = hiword!(lparam);
-                    if PT_BOX_END.x & 0x8000 == 0x8000 { PT_BOX_END.x = -PT_BOX_END.x; }
-                    if PT_BOX_END.y & 0x8000 == 0x8000 { PT_BOX_END.y = -PT_BOX_END.y; }
+                    PT_BOX_END.x = (loword!(lparam) as i16) as i32;
+                    PT_BOX_END.y = (hiword!(lparam) as i16) as i32;
 
                     ReleaseCapture();
                     SetCursor(LoadCursorW(0, IDC_ARROW));
