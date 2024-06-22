@@ -85,10 +85,10 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
             WM_LBUTTONDOWN => {
                 let x = loword!(lparam);
                 let y = hiword!(lparam);
-                PT_BEG.x = x;
-                PT_END.x = x;
-                PT_BEG.y = y;
-                PT_END.y = y;
+                PT_BEG.x = x as i32;
+                PT_END.x = x as i32;
+                PT_BEG.y = y as i32;
+                PT_END.y = y as i32;
                 draw_box_outline(window);
 
                 SetCapture(window);
@@ -102,21 +102,22 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
 
                     draw_box_outline(window);
 
-                    PT_END.x = (loword!(lparam) as i16) as i32;
-                    PT_END.y = (hiword!(lparam) as i16) as i32;
+                    PT_END.x = loword!(lparam) as i32;
+                    PT_END.y = hiword!(lparam) as i32;
 
                     draw_box_outline(window);
                 }
                 0
             },
             WM_LBUTTONUP => {
+                println!("lparam={:#018X}", lparam);
                 if BLOCKING {
                     draw_box_outline(window);
 
                     PT_BOX_BEG.x = PT_BEG.x;
                     PT_BOX_BEG.y = PT_BEG.y;
-                    PT_BOX_END.x = (loword!(lparam) as i16) as i32;
-                    PT_BOX_END.y = (hiword!(lparam) as i16) as i32;
+                    PT_BOX_END.x = loword!(lparam) as i32;
+                    PT_BOX_END.y = hiword!(lparam) as i32;
 
                     ReleaseCapture();
                     SetCursor(LoadCursorW(0, IDC_ARROW));
