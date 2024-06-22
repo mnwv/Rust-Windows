@@ -109,8 +109,8 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 0
             },
             WM_SIZE => {
-                CX_CLIENT = loword!(lparam);
-                CY_CLIENT = hiword!(lparam);
+                CX_CLIENT = loword!(lparam) as i32;
+                CY_CLIENT = hiword!(lparam) as i32;
 
                 // Set vertical scroll bar range and page size
                 let si: SCROLLINFO = SCROLLINFO {
@@ -145,7 +145,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 GetScrollInfo(window, SB_VERT, &mut si);
                 // Save the position for comparison later on
                 let vert_pos = si.nPos;
-                match loword!(wparam) {
+                match loword!(wparam) as i32 {
                     SB_TOP => si.nPos = si.nMin,
                     SB_BOTTOM => si.nPos = si.nMax,
                     SB_LINEUP => si.nPos -= 1,
@@ -179,7 +179,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 // Save the position for comparison later on
                 let horz_pos = si.nPos;
 
-                match loword!(wparam) {
+                match loword!(wparam) as i32 {
                     SB_LINELEFT => si.nPos -= 1,
                     SB_LINERIGHT => si.nPos += 1,
                     SB_PAGELEFT => si.nPos -= si.nPage as i32,
