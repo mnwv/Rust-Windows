@@ -72,7 +72,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 0
             },
             WM_TIMER => {
-                MessageBeep(1);
+                MessageBeep(0xFFFFFFFF);
                 FLIP_FLOP = !FLIP_FLOP;
                 InvalidateRect(window, std::ptr::null_mut(), FALSE);
                 0
