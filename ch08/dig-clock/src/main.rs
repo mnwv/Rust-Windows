@@ -200,7 +200,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 PostQuitMessage(0);
                 0
             },
-            _ => DefWindowProcA(window, message, wparam, lparam),
+            _ => DefWindowProcW(window, message, wparam, lparam),
         }
     }
 }
