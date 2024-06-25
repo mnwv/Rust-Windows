@@ -90,7 +90,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                             0,
                             window,
                             (y << 8 | x) as isize,
-                            GetWindowLongW(window, GWL_HINSTANCE) as isize,
+                            GetWindowLongPtrW(window, GWL_HINSTANCE) as isize,
                             std::ptr::null(),
                         );
                     }
