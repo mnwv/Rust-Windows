@@ -1,0 +1,2 @@
+#include "winres.h"
+ICONDEMO   ICON    DISCARDABLE "icondemo.ico"
