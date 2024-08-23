@@ -71,6 +71,13 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 ICON = LoadIconW(instance, WINDOW_CLASS).unwrap();
                 CX_ICON = GetSystemMetrics(SM_CXICON);
                 CY_ICON = GetSystemMetrics(SM_CYICON);
+                println!("CX_ICON={} CY_ICON={}", CX_ICON, CY_ICON);
+                let mut buf: [u16; 256] = [0; 256];
+                GetWindowTextW(window, &mut buf);
+                let s = from_wide_ptr(buf.as_ptr());
+                let s = format!("{}  CX_ICON={} CY_ICON={}", s, CX_ICON, CY_ICON);
+                let w = to_wide_chars(&s);
+                SetWindowTextW(window, PCWSTR::from_raw(w.as_ptr())).unwrap();
                 LRESULT(0)
             }
             WM_SIZE => {
@@ -117,4 +124,15 @@ fn to_wide_chars(str: &str) -> Vec<u16> {
     use std::os::windows::ffi::OsStrExt;
 
     OsStr::new(str).encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>()
+}
+
+#[allow(dead_code)]
+fn from_wide_ptr(ptr: *const u16) -> String {
+    use std::ffi::OsString;
+    use std::os::windows::ffi::OsStringExt;
+    unsafe {
+        let len = (0..std::isize::MAX).position(|i| *ptr.offset(i) == 0).unwrap();
+        let slice = std::slice::from_raw_parts(ptr, len);
+        OsString::from_wide(slice).to_string_lossy().into_owned()
+    }
 }
