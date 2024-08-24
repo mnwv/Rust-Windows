@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 pub const IDM_FILE_NEW: i32 = 40001;
 pub const IDM_FILE_OPEN: i32 = 40002;
 pub const IDM_FILE_SAVE: i32 = 40003;

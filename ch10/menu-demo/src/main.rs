@@ -11,10 +11,10 @@ use windows::{
 #[macro_use] mod macros;
 mod resource;
 
-const WINDOW_CLASS: PCWSTR = w!("MENUDEMO");
-static mut CX_CLIENT:i32 = 0;
-static mut CY_CLIENT: i32 = 0;
+const ID_TIMER: usize = 1;
+const WINDOW_CLASS: PCWSTR = w!("MenuDemo");
 static mut SELECTION: i32 = resource::IDM_BKGND_WHITE;
+
 fn main() -> Result<()> {
     unsafe {
         let instance = GetModuleHandleW(None)?;
@@ -70,7 +70,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 println!("id={}", id);
                 match id {
                     resource::IDM_FILE_NEW..=resource::IDM_FILE_SAVE_AS => {
-                        let _ = MessageBeep(MESSAGEBOX_STYLE(0));
+                        let _ = MessageBeep(MB_OK);
                         LRESULT(0)
                     },
                     resource::IDM_APP_EXIT => {
@@ -78,7 +78,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         LRESULT(0)
                     }
                     resource::IDM_EDIT_UNDO..=resource::IDM_EDIT_CLEAR => {
-                        let _ = MessageBeep(MESSAGEBOX_STYLE(0));
+                        let _ = MessageBeep(MB_OK);
                         LRESULT(0)
                     },
                     resource::IDM_BKGND_WHITE..=resource::IDM_BKGND_BLACK => {
@@ -102,13 +102,41 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         println!("r={} x={}", r, x);
                         let _ = InvalidateRect(window, None, TRUE);
                         LRESULT(0)
+                    },
+                    resource::IDM_TIMER_START => {
+                        let ret = SetTimer(window, ID_TIMER, 1000, None);
+                        if ret != 0 {
+                            let _ = EnableMenuItem(menu, resource::IDM_TIMER_START as u32, MF_GRAYED);
+                            let _ = EnableMenuItem(menu, resource::IDM_TIMER_STOP as u32, MF_ENABLED);
+                        }
+                        LRESULT(0)
+                    }
+                    resource::IDM_TIMER_STOP => {
+                        let _ = KillTimer(window, ID_TIMER);
+                        let _ = EnableMenuItem(menu, resource::IDM_TIMER_START as u32, MF_ENABLED);
+                        let _ = EnableMenuItem(menu, resource::IDM_TIMER_STOP as u32, MF_GRAYED);
+                        LRESULT(0)
+                    }
+                    resource::IDM_APP_HELP => {
+                        MessageBoxW(window, w!("Help not yet implemented"),
+                                    WINDOW_CLASS, MB_ICONEXCLAMATION | MB_OK);
+                        LRESULT(0)
+                    }
+                    resource::IDM_APP_ABOUT => {
+                        MessageBoxW(window,
+                            w!("Menu Demonstration Program\r\n(c) WVMN, 2024"),
+                            WINDOW_CLASS, MB_ICONINFORMATION | MB_OK);
+                        LRESULT(0)
                     }
                     _ => {
                         println!("WM_COMMAND DEFAULT");
                         DefWindowProcW(window, message, wparam, lparam)
                     }
                 }
-
+            }
+            WM_TIMER => {
+                let _ = MessageBeep(MB_OK);
+                LRESULT(0)
             }
             WM_DESTROY => {
                 println!("WM_DESTROY");
