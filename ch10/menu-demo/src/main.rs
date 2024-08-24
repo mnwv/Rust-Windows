@@ -3,7 +3,7 @@
 use windows::{
     core::*, Win32::Foundation::*,
     Win32::Graphics::Gdi::*,
-    Win32::System::LibraryLoader::GetModuleHandleW,
+    Win32::System::LibraryLoader::{GetModuleHandleW, },
     Win32::UI::WindowsAndMessaging::*,
     Win32::System::Diagnostics::Debug::MessageBeep,
 };
@@ -90,11 +90,15 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         CheckMenuItem(menu, SELECTION as u32, MF_CHECKED.0);
                         let brush =
                             colors[(SELECTION - resource::IDM_BKGND_WHITE) as usize];
-                        println!("brush={:?}", brush);
                         let stock_object = GetStockObject(brush);
-                        println!("stock_object={:?}", stock_object);
-                        let r = SetClassLongW(window, GCL_HBRBACKGROUND, stock_object.0 as i32);
-                        let x = GetClassLongW(window, GCL_HBRBACKGROUND);
+                        let r = SetClassLongPtrW(window, GCLP_HBRBACKGROUND, stock_object.0 as isize);
+                        if r == 0 {
+                            let n = GetLastError();
+                            println!("GetLastError() returns:{:?}", n); // GetLastError() returns:WIN32_ERROR(1413)
+                            let err = get_err_msg(n.0 as i32);
+                            println!("err:{}", err);    // err:インデックスが無効です。
+                        }
+                        let x = GetClassLongPtrW(window, GCLP_HBRBACKGROUND);
                         println!("r={} x={}", r, x);
                         let _ = InvalidateRect(window, None, TRUE);
                         LRESULT(0)
@@ -138,5 +142,34 @@ fn from_wide_ptr(ptr: *const u16) -> String {
         let len = (0..std::isize::MAX).position(|i| *ptr.offset(i) == 0).unwrap();
         let slice = std::slice::from_raw_parts(ptr, len);
         OsString::from_wide(slice).to_string_lossy().into_owned()
+    }
+}
+
+fn get_err_msg(err_code: i32) -> String {
+    use windows::Win32::{
+        System::Diagnostics::Debug::{
+            FormatMessageW, FORMAT_MESSAGE_ALLOCATE_BUFFER,
+            FORMAT_MESSAGE_FROM_SYSTEM,
+        },
+        Foundation::{LocalFree, HLOCAL},
+    };
+
+    unsafe {
+        let mut text: *mut u16 = std::ptr::null_mut();
+        let n = FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+            None,
+            err_code as u32,
+            0,
+            PWSTR(&mut text as *mut _ as *mut _),
+            2048,
+            None);
+        if n > 0 {
+            let parts = std::slice::from_raw_parts(text, n as usize);
+            let s = String::from_utf16(parts).unwrap();
+            LocalFree(HLOCAL(text as *mut core::ffi::c_void));
+            return s;
+        }
+        "Failed:FormatMessageW()".to_string()
     }
 }
