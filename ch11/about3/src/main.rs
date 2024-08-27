@@ -42,7 +42,10 @@ fn main() -> Result<()> {
         wc.hInstance = instance.into();
         wc.hIcon = HICON(std::ptr::null_mut());
         wc.hCursor = LoadCursorW(HINSTANCE(std::ptr::null_mut()), IDC_ARROW)?;
-        wc.hbrBackground = HBRUSH(COLOR_BTNFACE);
+        // let color_index = COLOR_BTNFACE.0 + 1; // COLOR_BTNFACE + 1 相当
+        // let index = color_index.into();
+        // wc.hbrBackground = GetSysColorBrush(SYS_COLOR_INDEX(index)); //HBRUSH(COLOR_BTNFACE);
+        wc.hbrBackground = GetSysColorBrush(SYS_COLOR_INDEX(COLOR_BTNFACE.0 + 1)); //HBRUSH(COLOR_BTNFACE);
         CreateWindowExW(
             WINDOW_EX_STYLE::default(),
             APP_NAME,
