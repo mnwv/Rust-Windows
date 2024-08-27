@@ -220,6 +220,7 @@ fn paint_window(window: HWND, color: i32, figure: i32) {
 }
 
 #[allow(dead_code)]
+#[allow(unused_variables)]
 unsafe fn print_focused_ctrl(dlg: HWND) {
     let focus_ctrl = GetFocus();
     let id = GetDlgCtrlID(focus_ctrl);   // 1000 IDC_BLACK
