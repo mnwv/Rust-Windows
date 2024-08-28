@@ -140,36 +140,26 @@ extern "system" fn ellip_push_wnd_proc(window: HWND, message: u32, wparam: WPARA
             WM_PAINT => {
                 println!("ellip_push_wnd_proc() WM_PAINT");
                 let mut rc: RECT = RECT::default();
-                let ret = GetClientRect(window, &mut rc);
-                println!("GetClientRect() returns:{:?}", ret);
+                GetClientRect(window, &mut rc).unwrap();
                 println!("left:{} right:{} top:{} bottom:{}", rc.left, rc.right, rc.top, rc.bottom);
                 let mut text:[u16;40] = [0;40];
-                let ret = GetWindowTextW(window, &mut text);
-                let pcwstr: PCWSTR = PCWSTR::from_raw(text.as_mut_ptr());
-                let len = pcwstr.len();
-                println!("pwstr={:?} len={}", pcwstr, len);
-
-                println!("GetWindowTextW() returns:{:?}", ret);
+                let text_len = GetWindowTextW(window, &mut text);
+                println!("text_len={}", text_len);
                 let mut ps= PAINTSTRUCT::default();
                 let hdc = BeginPaint(window, &mut ps);
-                println!("BeginPaint() returns:{:?}", hdc);
                 let brush = CreateSolidBrush(COLORREF(GetSysColor(COLOR_WINDOW)));
-                println!("CreateSolidBrush() returns:{:?}", brush);
                 let brush = HBRUSH(SelectObject(hdc, brush).0);
-                let ret = SetBkColor(hdc, COLORREF(GetSysColor(COLOR_WINDOW)));
-                println!("SetBkColor() returns:{:?}", ret);
-                let ret = SetTextColor(hdc, COLORREF(GetSysColor(COLOR_WINDOWTEXT)));
-                println!("SetTextColor() returns:{:?}", ret);
-                let ret = Ellipse(hdc, rc.left, rc.top, rc.right, rc.bottom);
-                println!("Ellipse() returns:{:?}", ret);
-                // let ret = DrawTextW(hdc, &mut text, &mut rc, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-                // let ret = ExtTextOutW(hdc, rc.right, 0, ETO_OPTIONS(0), None, pcwstr, 2, None );
-                // println!("DrawTextW() returns:{:?}", ret);
-                draw_text(window, hdc, pcwstr);
-                let ret = DeleteObject(SelectObject(hdc, brush));
-                println!("DeleteObject() returns:{:?}", ret);
-                let ret = EndPaint(window, &ps);
-                println!("EndPaint() returns:{:?}", ret);
+                let _ = SetBkColor(hdc, COLORREF(GetSysColor(COLOR_WINDOW)));
+                let _ = SetTextColor(hdc, COLORREF(GetSysColor(COLOR_WINDOWTEXT)));
+                let _ = Ellipse(hdc, rc.left, rc.top, rc.right, rc.bottom);
+                let mut v:Vec<u16> = Vec::from(text);
+                v.retain(|&x| x != 0);  // 末尾の0を取り除く
+                println!("v.len()={}", v.len());
+                let ret = DrawTextW(hdc, &mut v, &mut rc,
+                                    DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+                println!("DrawTextW() returns:{:?}", ret);
+                let _ = DeleteObject(SelectObject(hdc, brush));
+                let _ = EndPaint(window, &ps);
                 LRESULT(0)
             }
             WM_KEYUP | WM_LBUTTONUP => {
@@ -188,17 +178,6 @@ extern "system" fn ellip_push_wnd_proc(window: HWND, message: u32, wparam: WPARA
     }
 }
 
-fn draw_text(window: HWND, hdc: HDC, pcwstr: PCWSTR) {
-    use windows_sys::Win32::Foundation::*;
-    use windows_sys::Win32::Graphics::Gdi::*;
-    use windows_sys::Win32::UI::WindowsAndMessaging::*;
-    unsafe {
-        let mut rc: RECT = std::mem::zeroed();
-        GetClientRect(window.0, &mut rc);
-        let hdc = hdc.0;
-        DrawTextW(hdc, pcwstr.0, -1, &mut rc, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
-    }
-}
 #[allow(dead_code)]
 fn type_of<T>(_: &T) -> &'static str {
     std::any::type_name::<T>()
