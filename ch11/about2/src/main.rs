@@ -11,11 +11,13 @@ use windows::{
 use windows::Win32::UI::Input::KeyboardAndMouse::GetFocus;
 
 #[macro_use] mod macros;
+mod res_id;
+use res_id::*;
 // mod resource;
 
 const APP_NAME: PCWSTR = w!("About2");
-static mut CURRENT_COLOR: i32 = 1000;   // IDC_BLACK
-static mut CURRENT_FIGURE: i32 = 1008;  // IDC_RECT
+static mut CURRENT_COLOR: i32 = IDC_BLACK;   // IDC_BLACK
+static mut CURRENT_FIGURE: i32 = IDC_RECT;  // IDC_RECT
 
 fn main() -> Result<()> {
     unsafe {
@@ -70,8 +72,8 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
             WM_COMMAND => {
                 let n = GetWindowLongPtrW(window, GWLP_HINSTANCE);
                 let instance = HINSTANCE(n as *mut core::ffi::c_void);
-                match loword!(wparam.0) as u32 {
-                    40001 => {
+                match loword!(wparam.0) as i32 {
+                    IDM_APP_ABOUT => {
                         let n = DialogBoxParamW(instance,
                                         w!("ABOUTBOX"),
                                         window,
@@ -141,35 +143,84 @@ extern "system" fn about_dlg_proc(dlg: HWND, message: u32, wparam: WPARAM, lpara
                 // SetFocus(GetDlgItem(dlg, COLOR).unwrap()).unwrap();
                 0
             }
+            // WM_COMMAND => {
+            //     // print_focused_ctrl(dlg);
+            //     if IDOK.0 == loword!(wparam.0) as i32 {
+            //         println!("IDOK.0 == loword!(wparam.0) as i32");
+            //     }
+            //     match loword!(wparam.0) as i32 {
+            //          idok_value if idok_value == IDOK.0 => {
+            //             println!("IDOK");
+            //             if IDOK.0 == loword!(wparam.0) as i32 {
+            //                 println!("IDOK.0 == loword!(wparam.0) as i32");
+            //             }
+            //             CURRENT_COLOR = COLOR;
+            //             CURRENT_FIGURE = FIGURE;
+            //             EndDialog(dlg, TRUE.0 as isize).unwrap();
+            //             TRUE.0 as isize
+            //         }
+            //         idcancel_value if idcancel_value == IDCANCEL.0 => {
+            //             println!("IDCANCEL");
+            //             let _ = EndDialog(dlg, FALSE.0 as isize);
+            //             TRUE.0 as isize
+            //         }
+            //         1000..=1007 => {    // IDC_BLACK ~
+            //             COLOR = loword!(wparam.0) as i32;
+            //             CheckRadioButton(dlg,
+            //                              1000,      // IDC_BLACK
+            //                              1007,      // IDC_WHITE
+            //                              loword!(wparam.0) as i32).unwrap();
+            //             paint_the_block(CTRL_BLOCK, COLOR, FIGURE);
+            //             TRUE.0 as isize
+            //         }
+            //         1008..=1009 => {    // IDC_RECT || IDC_ELLIPSE
+            //             FIGURE = loword!(wparam.0) as i32;
+            //             CheckRadioButton(dlg,
+            //                              1008,      // IDC_RECT
+            //                              1009,      // IDC_ELLIPSE
+            //                              loword!(wparam.0) as i32).unwrap();
+            //             paint_the_block(CTRL_BLOCK, COLOR, FIGURE);
+            //             TRUE.0 as isize
+            //         }
+            //         _ => {
+            //             println!("Unknown WM_COMMAND. wparam.0={}", wparam.0);
+            //             FALSE.0 as isize
+            //         }
+            //     }
+            // }
             WM_COMMAND => {
                 // print_focused_ctrl(dlg);
-                match loword!(wparam.0) as i32 {
-                    1 => {
+                match MESSAGEBOX_RESULT(loword!(wparam.0) as i32) {
+                    IDOK => {
                         println!("IDOK");
+                        if IDOK.0 == loword!(wparam.0) as i32 {
+                            println!("IDOK.0 == loword!(wparam.0) as i32");
+                        }
                         CURRENT_COLOR = COLOR;
                         CURRENT_FIGURE = FIGURE;
                         EndDialog(dlg, TRUE.0 as isize).unwrap();
                         TRUE.0 as isize
                     }
-                    2 => {
+                    IDCANCEL => {
                         println!("IDCANCEL");
                         let _ = EndDialog(dlg, FALSE.0 as isize);
                         TRUE.0 as isize
                     }
-                    1000..=1007 => {    // IDC_BLACK ~
+                    COLOR_BLACK | COLOR_RED | COLOR_BLUE | COLOR_CYAN |
+                    COLOR_GREEN | COLOR_MAGENTA | COLOR_YELLOW | COLOR_WHITE => {
                         COLOR = loword!(wparam.0) as i32;
                         CheckRadioButton(dlg,
-                                         1000,      // IDC_BLACK
-                                         1007,      // IDC_WHITE
+                                         IDC_BLACK,      // IDC_BLACK
+                                         IDC_WHITE,      // IDC_WHITE
                                          loword!(wparam.0) as i32).unwrap();
                         paint_the_block(CTRL_BLOCK, COLOR, FIGURE);
                         TRUE.0 as isize
                     }
-                    1008..=1009 => {    // IDC_RECT || IDC_ELLIPSE
+                    FIG_RECT | FIG_ELLIPSE => {    // IDC_RECT || IDC_ELLIPSE
                         FIGURE = loword!(wparam.0) as i32;
                         CheckRadioButton(dlg,
-                                         1008,      // IDC_RECT
-                                         1009,      // IDC_ELLIPSE
+                                         IDC_RECT,      // IDC_RECT
+                                         IDC_ELLIPSE,      // IDC_ELLIPSE
                                          loword!(wparam.0) as i32).unwrap();
                         paint_the_block(CTRL_BLOCK, COLOR, FIGURE);
                         TRUE.0 as isize
