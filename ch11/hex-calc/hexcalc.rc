@@ -1,0 +1,16 @@
+// 自分で作ったRCファイル
+// #include "resource.h"
+
+// from targetver.h
+#include <SDKDDKVer.h>
+
+// from vs2022
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+// ICON
+HEXCALC  ICON    "HexCalc.ico"
+
+// DIALOG from petzold
+#include "hexcalc.dlg"
