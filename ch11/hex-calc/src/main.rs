@@ -72,35 +72,46 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
     unsafe {
         match message {
             WM_KEYDOWN | WM_CHAR | WM_COMMAND => {
-                let _ = SetFocus(window);
-                let mut kcode: u8 = wparam.0 as u8; // 半角英数字のみ
-                kcode = kcode.to_ascii_uppercase();
-
-                println!("msg={:?} kcode={:#08X} wparam.0={:#08X}", message, kcode, wparam.0);
-                if message == WM_KEYDOWN && kcode == VK_LEFT.0 as u8 {
-                    kcode = VK_BACK.0 as u8;
-                }
-                if message == WM_CHAR {
-                    if kcode == VK_RETURN.0 as u8 {
-                        kcode = '=' as u8;
+                // 256  // 258      // 273
+                let mut wparam2 = wparam.clone();
+                if message == WM_KEYDOWN {
+                    if wparam2.0 != VK_LEFT.0 as usize {
+                        return DefWindowProcW(window, message, wparam, lparam);
                     }
-                    let result = GetDlgItem(window, wparam.0 as i32);
-                    if let Some(button) = result.ok() {
-                        let _ = SendMessageW(button, BM_SETSTATE, WPARAM(1), LPARAM(0));
-                        Sleep(100);
-                        let _ = SendMessageW(button, BM_SETSTATE, WPARAM(0), LPARAM(0));
-                    } else {
+                    wparam2.0 = VK_BACK.0 as usize;
+                }
+                if message == WM_KEYDOWN || message == WM_CHAR {
+                    let mut code:u8 = wparam2.0 as u8;
+                    if wparam2.0 == VK_RETURN.0 as usize {
+                        code = '=' as u8;
+                        wparam2.0 = code as usize;
+                    }
+                    code = code.to_ascii_uppercase();
+                    wparam2.0 = code as usize;
+                    let result = GetDlgItem(window, wparam2.0 as i32);
+                    if let Some(err) = result.as_ref().err() {
+                        println!("GetDlgItem() failed。Error={:?}", err);
+                        println!("wparam={:?}", wparam);
                         MessageBeep(MB_OK).unwrap();
                         return DefWindowProcW(window, message, wparam, lparam);
                     }
+                    let button = result.ok().unwrap();
+                    let _ = SendMessageW(button, BM_SETSTATE, WPARAM(1), LPARAM(0));
+                    Sleep(100);
+                    let _ = SendMessageW(button, BM_SETSTATE, WPARAM(0), LPARAM(0));
                 }
+                let _ = SetFocus(window);
+                let kcode: u8 = wparam2.0 as u8;
+
+                println!("msg={:?} kcode={:#04X} wparam.0={:#010X}", message, kcode, wparam.0);
                 if kcode == VK_BACK.0 as u8 {
                     NUMBER /= 16;
                     show_number(window, NUMBER);
                 } else if kcode == VK_ESCAPE.0 as u8 {
                     NUMBER = 0;
                     show_number(window, NUMBER);
-                } else if (kcode as char).is_ascii_hexdigit() {
+                } else if (kcode as char).is_ascii_hexdigit() || (kcode as char).is_ascii_digit() {
+                    println!("digit? kcode={:#04X}", kcode);
                     if NEW_NUMBER {
                         FIRST_NUM = NUMBER;
                         NUMBER = 0;
@@ -115,7 +126,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         MessageBeep(MB_OK).unwrap();
                     }
                 } else {
-                    println!("operation? {}", kcode);
+                    println!("operation? kcode={:#04X}", kcode);
                     if !NEW_NUMBER {
                         NUMBER = calc_it(FIRST_NUM, OPERATION, NUMBER);
                         show_number(window, NUMBER);
