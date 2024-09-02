@@ -88,7 +88,7 @@ pub fn pop_file_write(wnd_edit: HWND, file_name: &String) -> BOOL {
         println!("create() failed. Error:{}", err.to_string());
         return FALSE;
     }
-    let len = unsafe { GetWindowTextLengthW(wnd_edit) };
+    let len = unsafe { GetWindowTextLengthW(wnd_edit) + 1};
     let mut v: Vec<u16> = vec!(0; len as usize);
     unsafe {
         GetWindowTextW(wnd_edit, &mut v);
