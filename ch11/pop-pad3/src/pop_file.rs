@@ -1,7 +1,9 @@
+use std::io::{Read, Write};
 use std::ptr::addr_of;
 use windows::core::{w, PCWSTR, PWSTR};
-use windows::Win32::Foundation::{BOOL, HINSTANCE, HWND, LPARAM, MAX_PATH, TRUE};
+use windows::Win32::Foundation::{BOOL, FALSE, HINSTANCE, HWND, LPARAM, MAX_PATH, TRUE};
 use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, OFN_CREATEPROMPT, OFN_HIDEREADONLY, OPENFILENAMEW, OPEN_FILENAME_FLAGS};
+use windows::Win32::UI::WindowsAndMessaging::{GetWindowTextLengthW, GetWindowTextW, SetWindowTextW};
 use crate::util;
 
 static mut OFN: OPENFILENAMEW = unsafe { std::mem::zeroed() };
@@ -43,4 +45,45 @@ pub unsafe fn pop_file_open_dialog(hwnd: HWND, filename: &mut String, title_name
         *title_name = util::from_wide_ptr(buf_title_name.as_ptr());
     }
     ret
+}
+
+pub fn pop_file_read(wnd_edit: HWND, file_name: &String) -> BOOL {
+    let result = std::fs::File::open(file_name);
+    if let Some(err) = result.as_ref().err() {
+        println!("open() failed. Error:{}", err.to_string());
+        return FALSE;
+    }
+    let mut file = result.ok().unwrap();
+    let mut contents = String::new();
+    let result = file.read_to_string(&mut contents);
+    if let Some(err) = result.as_ref().err() {
+        println!("read_to_string() failed. Error:{}", err.to_string());
+        return FALSE;
+    }
+    let vu16 = util::to_wide_chars(&contents);
+    unsafe {
+        SetWindowTextW(wnd_edit, PCWSTR::from_raw(vu16.as_ptr())).unwrap();
+        TRUE
+    }
+}
+
+pub fn pop_file_write(wnd_edit: HWND, file_name: &String) -> BOOL {
+    let result = std::fs::File::create(file_name);
+    if let Some(err) = result.as_ref().err() {
+        println!("create() failed. Error:{}", err.to_string());
+        return FALSE;
+    }
+    let len = unsafe { GetWindowTextLengthW(wnd_edit) };
+    let mut v: Vec<u16> = vec!(0; len as usize);
+    unsafe {
+        GetWindowTextW(wnd_edit, &mut v);
+    }
+    let s = util::from_wide_ptr(v.as_ptr());
+    let mut file = result.ok().unwrap();
+    let result = file.write_all((&s).as_ref());
+    if let Some(err) = result.as_ref().err() {
+        println!("write_all() failed. Error:{}", err.to_string());
+        return FALSE;
+    }
+    TRUE
 }

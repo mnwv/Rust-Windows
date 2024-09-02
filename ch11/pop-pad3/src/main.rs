@@ -20,10 +20,12 @@ use windows::{
     },
 };
 use crate::pop_file::*;
+use crate::pop_font::pop_font_initialize;
 
 #[macro_use] mod macros;
 mod pop_file;
 mod util;
+mod pop_font;
 
 const EDIT_ID: i32 = 1;
 static UNTITLED: &str = "untitled";
@@ -110,7 +112,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     0, 0, 0, 0,
                     window,
                     // LoadMenuW(INSTANCE, PCWSTR::from_raw(EDIT_ID as *const u16)).unwrap(),
-                    None,
+                    HMENU(EDIT_ID as *mut core::ffi::c_void),   // ID of child window
                     INSTANCE,
                     None,
                 ).unwrap();
@@ -118,7 +120,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
 
                 // Initialize common dialog box stuff
                 pop_file_initialize(window);
-                // PopFontInitialize (hwndEdit) ;
+                pop_font_initialize(WND_EDIT);
 
                 MSG_FIND_REP = RegisterWindowMessageW (FINDMSGSTRINGW);
 
@@ -177,7 +179,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                 LRESULT(0)
             }
             WM_COMMAND => {
-                if lparam.0 != 0 && loword!(wparam.0) ==EDIT_ID as u16 {
+                if lparam.0 != 0 && loword!(wparam.0) == EDIT_ID as u16 {
                     match hiword!(wparam.0) as u32 {
                         EN_UPDATE => {
                             NEED_SAVE = true;
@@ -192,6 +194,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     }
                 }
                 match loword!(wparam.0) {
+                    // Messages from File menu
                     40001/*IDM_FILE_NEW*/ => {
                         if NEED_SAVE && ask_about_save(window, &*addr_of!(TITLE_NAME)) == IDCANCEL {
                             return LRESULT(0);
@@ -211,6 +214,12 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         #[allow(static_mut_refs)]
                         if pop_file_open_dialog(window, &mut FILE_NAME, &mut TITLE_NAME) == TRUE {
                             println!("file_name={:?}, file_title={:?}", FILE_NAME, TITLE_NAME);
+                            if pop_file_read(WND_EDIT, &FILE_NAME) == FALSE {
+                                ok_message(window,
+                                           &format!("Could not read file {}!", &TITLE_NAME));
+                                FILE_NAME = String::new();
+                                TITLE_NAME = String::new();
+                            }
                         }
                         do_caption(window, &*addr_of!(TITLE_NAME));
                         NEED_SAVE = false;
@@ -218,9 +227,9 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     }
                     40003/*IDM_FILE_SAVE*/ | 40004/*IDM_FILE_SAVE_AS*/=> {
                         if loword!(wparam.0) == 40003/*IDM_FILE_SAVE*/ {
-                            // if FILE_NAME != PWSTR::null() {
+                            if !FILE_NAME.is_empty() {
 
-                            // }
+                            }
                         }
                         // if PopFileSaveDlg() {
                         //
