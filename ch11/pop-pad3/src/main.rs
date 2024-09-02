@@ -211,12 +211,14 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                             return  LRESULT(0);
                         }
                         //if pop_file_open_dialog(window, *addr_of!(FILE_NAME), file_title) == TRUE {
-                        #[allow(static_mut_refs)]
-                        if pop_file_open_dialog(window, &mut FILE_NAME, &mut TITLE_NAME) == TRUE {
+                        // #[allow(static_mut_refs)]
+                        if pop_file_open_dialog(window,
+                                                &mut *addr_of_mut!(FILE_NAME),
+                                                &mut *addr_of_mut!(TITLE_NAME)) == TRUE {
                             println!("file_name={}, file_title={}", FILE_NAME, TITLE_NAME);
-                            if pop_file_read(WND_EDIT, &FILE_NAME) == FALSE {
+                            if pop_file_read(WND_EDIT, &*addr_of!(FILE_NAME)) == FALSE {
                                 ok_message(window,
-                                           &format!("Could not read file {}!", &TITLE_NAME));
+                                           &format!("Could not read file {}!", &*addr_of!(TITLE_NAME)));
                                 FILE_NAME = String::new();
                                 TITLE_NAME = String::new();
                             }
@@ -234,7 +236,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                                 } else {
                                     ok_message(window,
                                                &format!("Could not write file {}",
-                                                                &*addr_of_mut!(TITLE_NAME)));
+                                                                &*addr_of!(TITLE_NAME)));
                                     return LRESULT(0);
                                 }
                             }
@@ -244,6 +246,16 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                                              &mut *addr_of_mut!(FILE_NAME),
                                              &mut *addr_of_mut!(TITLE_NAME))  == TRUE {
                             println!("file_name={}, title_name={}", FILE_NAME, TITLE_NAME);
+                            do_caption(window, &*addr_of!(TITLE_NAME));
+                            if pop_file_write(WND_EDIT, &*addr_of!(FILE_NAME)) == TRUE {
+                                NEED_SAVE = false;
+                                return LRESULT(1);
+                            } else {
+                                ok_message(window,
+                                           &format!("Could not write file {}",
+                                                    &*addr_of_mut!(TITLE_NAME)));
+                                return LRESULT(0);
+                            }
                         }
                         return LRESULT(0);
                     }
