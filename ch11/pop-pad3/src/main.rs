@@ -213,7 +213,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         //if pop_file_open_dialog(window, *addr_of!(FILE_NAME), file_title) == TRUE {
                         #[allow(static_mut_refs)]
                         if pop_file_open_dialog(window, &mut FILE_NAME, &mut TITLE_NAME) == TRUE {
-                            println!("file_name={:?}, file_title={:?}", FILE_NAME, TITLE_NAME);
+                            println!("file_name={}, file_title={}", FILE_NAME, TITLE_NAME);
                             if pop_file_read(WND_EDIT, &FILE_NAME) == FALSE {
                                 ok_message(window,
                                            &format!("Could not read file {}!", &TITLE_NAME));
@@ -228,12 +228,19 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     40003/*IDM_FILE_SAVE*/ | 40004/*IDM_FILE_SAVE_AS*/=> {
                         if loword!(wparam.0) == 40003/*IDM_FILE_SAVE*/ {
                             if !FILE_NAME.is_empty() {
-
+                                if pop_file_write(WND_EDIT, &FILE_NAME) == TRUE {
+                                    NEED_SAVE = true;
+                                    return LRESULT(1);
+                                } else {
+                                    ok_message(window, &format!("Could not write file {}", &TITLE_NAME));
+                                    return LRESULT(0);
+                                }
                             }
                         }
-                        // if PopFileSaveDlg() {
-                        //
-                        // }
+                        // filename yet not set or save_as
+                        if pop_file_save_dlg(window, &mut FILE_NAME, &mut TITLE_NAME)  == TRUE {
+                            println!("file_name={}, title_name={}", FILE_NAME, TITLE_NAME);
+                        }
                         return LRESULT(0);
                     }
                     40005/*IDM_FILE_PRINT*/ => {

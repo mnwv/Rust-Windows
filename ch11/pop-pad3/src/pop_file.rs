@@ -1,8 +1,8 @@
 use std::io::{Read, Write};
-use std::ptr::addr_of;
+use std::ptr::{addr_of, addr_of_mut};
 use windows::core::{w, PCWSTR, PWSTR};
 use windows::Win32::Foundation::{BOOL, FALSE, HINSTANCE, HWND, LPARAM, MAX_PATH, TRUE};
-use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, OFN_CREATEPROMPT, OFN_HIDEREADONLY, OPENFILENAMEW, OPEN_FILENAME_FLAGS};
+use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, GetSaveFileNameW, OFN_CREATEPROMPT, OFN_HIDEREADONLY, OFN_OVERWRITEPROMPT, OPENFILENAMEW, OPEN_FILENAME_FLAGS};
 use windows::Win32::UI::WindowsAndMessaging::{GetWindowTextLengthW, GetWindowTextW, SetWindowTextW};
 use crate::util;
 
@@ -39,7 +39,22 @@ pub unsafe fn pop_file_open_dialog(hwnd: HWND, filename: &mut String, title_name
     OFN.lpstrFile = PWSTR::from_raw(buf_file_name.as_ptr() as *mut u16);
     OFN.lpstrFileTitle = PWSTR::from_raw(buf_title_name.as_ptr() as *mut u16);
     OFN.Flags = OFN_HIDEREADONLY | OFN_CREATEPROMPT;
-    let ret = GetOpenFileNameW(addr_of!(OFN) as *mut OPENFILENAMEW);
+    let ret = GetOpenFileNameW(addr_of_mut!(OFN));
+    if ret == TRUE {
+        *filename = util::from_wide_ptr(buf_file_name.as_ptr());
+        *title_name = util::from_wide_ptr(buf_title_name.as_ptr());
+    }
+    ret
+}
+
+pub unsafe fn pop_file_save_dlg(hwnd: HWND, filename: &mut String, title_name: &mut String) -> BOOL {
+    let buf_file_name: [u16;MAX_PATH as usize] = [0;MAX_PATH as usize];
+    let buf_title_name: [u16;MAX_PATH as usize] = [0;MAX_PATH as usize];
+    OFN.hwndOwner = hwnd;
+    OFN.lpstrFile = PWSTR::from_raw(buf_file_name.as_ptr() as *mut u16);
+    OFN.lpstrFileTitle = PWSTR::from_raw(buf_title_name.as_ptr() as *mut u16);
+    OFN.Flags = OFN_OVERWRITEPROMPT;
+    let ret = GetSaveFileNameW(addr_of_mut!(OFN));
     if ret == TRUE {
         *filename = util::from_wide_ptr(buf_file_name.as_ptr());
         *title_name = util::from_wide_ptr(buf_title_name.as_ptr());
