@@ -13,7 +13,7 @@ pub unsafe fn pop_font_initialize(wnd_edit: HWND) {
                        size_of::<LOGFONTW>() as i32,
                        Some(addr_of_mut!(LOG_FONT) as *mut core::ffi::c_void));
     println!("GetObjectW() returns:{}", ret);
-    FONT = CreateFontIndirectW(&LOG_FONT);
+    FONT = CreateFontIndirectW(addr_of_mut!(LOG_FONT));
     let _ = SendMessageW(wnd_edit, WM_SETFONT, WPARAM(FONT.0 as usize), LPARAM(0));
 }
 
@@ -22,7 +22,7 @@ pub unsafe fn pop_font_choose_font(hwnd: HWND) -> BOOL {
         lStructSize: size_of::<CHOOSEFONTW>() as u32,
         hwndOwner: hwnd,
         hDC: Default::default(),
-        lpLogFont: &mut LOG_FONT,
+        lpLogFont: addr_of_mut!(LOG_FONT),
         iPointSize: 0,
         Flags: CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS | CF_EFFECTS,
         rgbColors: COLORREF(0),

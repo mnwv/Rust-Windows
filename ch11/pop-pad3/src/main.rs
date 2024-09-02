@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::ptr::{addr_of};
+use std::ptr::{addr_of, addr_of_mut};
 use windows::{
     core::*,
     Win32::{
@@ -228,17 +228,21 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                     40003/*IDM_FILE_SAVE*/ | 40004/*IDM_FILE_SAVE_AS*/=> {
                         if loword!(wparam.0) == 40003/*IDM_FILE_SAVE*/ {
                             if !FILE_NAME.is_empty() {
-                                if pop_file_write(WND_EDIT, &FILE_NAME) == TRUE {
+                                if pop_file_write(WND_EDIT, &*addr_of!(FILE_NAME)) == TRUE {
                                     NEED_SAVE = true;
                                     return LRESULT(1);
                                 } else {
-                                    ok_message(window, &format!("Could not write file {}", &TITLE_NAME));
+                                    ok_message(window,
+                                               &format!("Could not write file {}",
+                                                                &*addr_of_mut!(TITLE_NAME)));
                                     return LRESULT(0);
                                 }
                             }
                         }
                         // filename yet not set or save_as
-                        if pop_file_save_dlg(window, &mut FILE_NAME, &mut TITLE_NAME)  == TRUE {
+                        if pop_file_save_dlg(window,
+                                             &mut *addr_of_mut!(FILE_NAME),
+                                             &mut *addr_of_mut!(TITLE_NAME))  == TRUE {
                             println!("file_name={}, title_name={}", FILE_NAME, TITLE_NAME);
                         }
                         return LRESULT(0);

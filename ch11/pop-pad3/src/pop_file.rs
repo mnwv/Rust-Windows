@@ -1,5 +1,5 @@
 use std::io::{Read, Write};
-use std::ptr::{addr_of, addr_of_mut};
+use std::ptr::{addr_of_mut};
 use windows::core::{w, PCWSTR, PWSTR};
 use windows::Win32::Foundation::{BOOL, FALSE, HINSTANCE, HWND, LPARAM, MAX_PATH, TRUE};
 use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, GetSaveFileNameW, OFN_CREATEPROMPT, OFN_HIDEREADONLY, OFN_OVERWRITEPROMPT, OPENFILENAMEW, OPEN_FILENAME_FLAGS};
