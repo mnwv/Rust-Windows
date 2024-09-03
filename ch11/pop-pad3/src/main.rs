@@ -20,15 +20,17 @@ use windows::{
     },
 };
 use crate::pop_file::*;
-use crate::pop_font::pop_font_initialize;
+use crate::pop_font::{pop_font_choose_font, pop_font_deinitialize, pop_font_initialize, pop_font_set_font};
+use crate::pop_prnt0::pop_prnt_print_file;
 
 #[macro_use] mod macros;
 mod pop_file;
 mod util;
 mod pop_font;
+mod pop_prnt0;
 
 const EDIT_ID: i32 = 1;
-static UNTITLED: &str = "untitled";
+static UNTITLED: &str = "(無題)";
 
 static mut DLG_MODELESS: HWND = HWND(std::ptr::null_mut());
 const APP_NAME: PCWSTR = w!("PopPad");
@@ -253,22 +255,27 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                             } else {
                                 ok_message(window,
                                            &format!("Could not write file {}",
-                                                    &*addr_of_mut!(TITLE_NAME)));
+                                                    &*addr_of!(TITLE_NAME)));
                                 return LRESULT(0);
                             }
                         }
                         return LRESULT(0);
                     }
                     40005/*IDM_FILE_PRINT*/ => {
-                        //
+                        if pop_prnt_print_file(INSTANCE, window, WND_EDIT,
+                                               &*addr_of!(TITLE_NAME)) == FALSE {
+                            ok_message(window, &format!("Could not print file {}",
+                                                    &*addr_of!(TITLE_NAME)));
+
+                        }
                         return LRESULT(0);
                     }
                     40006/*IDM_APP_EXIT*/ => {
                         let _ = SendMessageW(window, WM_CLOSE, WPARAM(0), LPARAM(0));
                         return LRESULT(0);
                     }
-                                                // Messages from Edit menu
-                                                40007/*IDM_EDIT_UNDO*/ => {
+                    // Messages from Edit menu
+                    40007/*IDM_EDIT_UNDO*/ => {
                         let _ = SendMessageW(WND_EDIT, WM_UNDO, WPARAM(0), LPARAM(0));
                         return LRESULT(0);
                     }
@@ -289,11 +296,11 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         return LRESULT(0);
                     }
                     40012/*IDM_EDIT_SELECT_ALL*/ => {
-                        let _ = SendMessageW(WND_EDIT, EM_SETSEL, WPARAM(0), LPARAM(0));
+                        let _ = SendMessageW(WND_EDIT, EM_SETSEL, WPARAM(0), LPARAM(-1));
                         return LRESULT(0);
                     }
-                                                // Messages from Search menu
-                                                40013/*IDM_SEARCH_FIND*/ => {
+                    // Messages from Search menu
+                    40013/*IDM_SEARCH_FIND*/ => {
                         let _ = SendMessageW(WND_EDIT, EM_GETSEL, WPARAM(0),
                                              LPARAM(addr_of!(OFFSET) as *const i32 as isize));
                         // DLG_MODELESS = PopFindFindDlg(window);
@@ -316,7 +323,9 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
                         return LRESULT(0);
                     }
                     40016/*IDM_FORMAT_FONT*/ => {
-                        // if {}
+                        if pop_font_choose_font(window) == TRUE {
+                            pop_font_set_font(WND_EDIT);
+                        }
                         return LRESULT(0);
                     }
                     40017/*IDM_HELP*/ => {
@@ -359,6 +368,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
             WM_DESTROY => {
                 println!("WM_DESTROY");
                 let _ = DeleteObject(EDIT_BK_BRUSH);
+                pop_font_deinitialize();
                 PostQuitMessage(0);
                 LRESULT(0)
             }

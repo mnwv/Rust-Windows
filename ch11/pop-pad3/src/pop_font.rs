@@ -1,12 +1,13 @@
-use std::ptr::addr_of_mut;
+use std::ptr::{addr_of, addr_of_mut};
 use windows::core::{PCWSTR, PWSTR};
-use windows::Win32::Foundation::{BOOL, COLORREF, HINSTANCE, HWND, LPARAM, WPARAM};
-use windows::Win32::Graphics::Gdi::{CreateFontIndirectW, GetObjectW, GetStockObject, HFONT, LOGFONTW, SYSTEM_FONT};
+use windows::Win32::Foundation::{BOOL, COLORREF, HINSTANCE, HWND, LPARAM, RECT, TRUE, WPARAM};
+use windows::Win32::Graphics::Gdi::{CreateFontIndirectW, DeleteObject, GetObjectW, GetStockObject, InvalidateRect, HFONT, LOGFONTW, SYSTEM_FONT};
 use windows::Win32::UI::Controls::Dialogs::{ChooseFontW, CF_EFFECTS, CF_INITTOLOGFONTSTRUCT, CF_SCREENFONTS, CHOOSEFONTW, CHOOSEFONT_FONT_TYPE};
-use windows::Win32::UI::WindowsAndMessaging::{SendMessageW, WM_SETFONT};
+use windows::Win32::UI::WindowsAndMessaging::{GetClientRect, SendMessageW, WM_SETFONT};
 
 static mut LOG_FONT: LOGFONTW = unsafe { std::mem::zeroed() };
 static mut FONT: HFONT = HFONT( std::ptr::null_mut());
+
 pub unsafe fn pop_font_initialize(wnd_edit: HWND) {
     let gdi_obj = GetStockObject(SYSTEM_FONT);
     let ret = GetObjectW(gdi_obj,
@@ -37,4 +38,18 @@ pub unsafe fn pop_font_choose_font(hwnd: HWND) -> BOOL {
         nSizeMax: 0,
     };
     ChooseFontW(&mut cf)
+}
+
+pub unsafe fn pop_font_set_font(wnd_edit: HWND) {
+    let font_new = CreateFontIndirectW(addr_of!(LOG_FONT));
+    let _ = SendMessageW(wnd_edit, WM_SETFONT, WPARAM(font_new.0 as usize), LPARAM(0));
+    let _ = DeleteObject(FONT);
+    let mut rect: RECT = RECT::default();
+    FONT = font_new;
+    GetClientRect(wnd_edit, &mut rect).unwrap();
+    let _ = InvalidateRect(wnd_edit, Some(&rect), TRUE);
+}
+
+pub unsafe fn pop_font_deinitialize() {
+    let _ = DeleteObject(FONT);
 }
